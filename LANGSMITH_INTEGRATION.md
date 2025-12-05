@@ -540,9 +540,134 @@ with tracing_v2_enabled(enabled=False):
 
 ---
 
+## Infrastructure Requirements
+
+LangSmith offers three deployment models to accommodate different infrastructure needs.
+
+### Deployment Options
+
+#### 1. Cloud (SaaS) - Zero Infrastructure
+
+| Aspect | Details |
+|--------|---------|
+| **Managed By** | LangChain (fully hosted) |
+| **Infrastructure Required** | None |
+| **URL** | https://smith.langchain.com |
+| **Setup** | Just set environment variables |
+| **Best For** | Quick start, small-medium teams, development |
+
+```bash
+# Only these env vars needed
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=lsv2_pt_xxxxx
+LANGCHAIN_PROJECT=bw-auto
+```
+
+#### 2. Hybrid Deployment
+
+| Aspect | Details |
+|--------|---------|
+| **Control Plane** | Managed by LangChain |
+| **Data Plane** | Hosted in your infrastructure |
+| **Data Residency** | Your data stays in your environment |
+| **Best For** | Enterprise with data sovereignty requirements |
+
+#### 3. Self-Hosted - Full Infrastructure
+
+For complete control, you run the entire LangSmith stack.
+
+##### Compute Resources
+
+| Component | CPU | RAM | Purpose |
+|-----------|-----|-----|---------|
+| **Frontend** | 1 | 2 GB | Web UI |
+| **Backend** | 2 | 4 GB | Core API services |
+| **Platform Backend** | 1 | 2 GB | Platform APIs |
+| **Queue** | 1 | 2 GB | Async job processing |
+| **Playground** | 1 | 2 GB | LLM testing interface |
+| **ACE Backend** | 1 | 2 GB | Analytics & evaluation |
+| **PostgreSQL** | 2 | 8 GB | Operational data |
+| **Redis** | 2 | 4 GB | Caching & queuing |
+| **ClickHouse** | 8 | 32 GB | Traces & analytics |
+| **Total Minimum** | **19** | **58 GB** | |
+
+##### Storage Services
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    LangSmith Self-Hosted                         │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
+│  │  PostgreSQL  │  │    Redis     │  │     ClickHouse       │   │
+│  │              │  │              │  │                      │   │
+│  │ - Users      │  │ - Sessions   │  │ - Traces (billions)  │   │
+│  │ - Projects   │  │ - Queues     │  │ - Feedback           │   │
+│  │ - API Keys   │  │ - Cache      │  │ - Analytics          │   │
+│  │ - Datasets   │  │              │  │ - Time-series data   │   │
+│  └──────────────┘  └──────────────┘  └──────────────────────┘   │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │              Blob Storage (Optional)                        │ │
+│  │   - S3 / GCS / Azure Blob / MinIO                          │ │
+│  │   - Large trace payloads                                    │ │
+│  │   - Attachments                                             │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+##### Networking Requirements
+
+| Direction | Endpoint | Purpose |
+|-----------|----------|---------|
+| **Egress** | `https://beacon.langchain.com` | License verification |
+| **Ingress** | Your domain | User access to UI |
+| **Internal** | Between services | Service communication |
+
+##### Deployment Methods
+
+**Docker Compose** (Development/Testing):
+```bash
+git clone https://github.com/langchain-ai/langsmith-sdk
+cd langsmith-sdk/langsmith
+docker-compose up -d
+```
+
+**Kubernetes/Helm** (Production):
+```bash
+helm repo add langchain https://langchain-ai.github.io/helm/
+helm install langsmith langchain/langsmith
+```
+
+### Deployment Comparison
+
+| Feature | Cloud | Hybrid | Self-Hosted |
+|---------|-------|--------|-------------|
+| **Infrastructure Cost** | $0 | Medium | High |
+| **Setup Complexity** | None | Medium | High |
+| **Data Location** | LangChain Cloud | Your infra | Your infra |
+| **Maintenance** | None | Partial | Full |
+| **Customization** | Limited | Medium | Full |
+| **Pricing** | Usage-based | Enterprise | License |
+| **Min Resources** | - | ~30 GB RAM | ~60 GB RAM |
+
+### Recommendation for This Project
+
+For the **bw-auto** project, we recommend starting with the **Cloud (SaaS)** option:
+
+1. **Zero infrastructure overhead** - No servers to manage
+2. **Instant setup** - Just add 3 environment variables
+3. **Free tier available** - Generous limits for development
+4. **Easy migration** - Can move to self-hosted later if needed
+
+If data sovereignty or compliance requirements dictate, consider the **Hybrid** or **Self-Hosted** options.
+
+---
+
 ## References
 
 - [LangSmith Documentation](https://docs.smith.langchain.com/)
+- [LangSmith Self-Hosting Guide](https://docs.smith.langchain.com/self_hosting/)
+- [LangSmith Docker Deployment](https://docs.langchain.com/langsmith/docker)
 - [LangGraph Tracing](https://langchain-ai.github.io/langgraph/concepts/low_level/#tracing)
 - [LangChain Callbacks](https://python.langchain.com/docs/concepts/callbacks/)
 - [LangSmith Python SDK](https://github.com/langchain-ai/langsmith-sdk)
